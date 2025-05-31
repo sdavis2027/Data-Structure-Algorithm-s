@@ -1,0 +1,208 @@
+/*
+Authors: Jimi Adegoroye, Josh W., Steven Davis
+Date: 11/29/2023
+Class: CSC 2710 Algorithms
+Compile with: g++ HashPasswords.cpp
+Execute with ./a.out
+Project Description: 
+Hashing will used to determine whether a password meets the minimum requirement such
+as having an uppercase, lowercase, numbers, and special characters. The code will also
+ensure that the user doesn’t use their name or their personal information, which reduces
+vulnerability and the chances of a cyber attack. To provide users with feedback, the system
+can show the strength level (Weak, Moderate, and Strong) based on the passwords
+complexity. Adding rate limiting and assessing the time it would take to brute force the
+password adds an extra layer of security, making it more challenging for attackers to
+compromise accounts.
+*/
+
+//includes and name spaces 
+#include <iostream>
+#include <string>
+#include <cctype>
+#include <vector>
+#include <unordered_set>
+#include <numeric>
+#include <chrono>
+#include <thread>
+using namespace std;
+
+// (hashing function) Enhanced hash function using a more complex approach
+//
+unsigned int enhancement(const string& password) 
+{
+    vector<unsigned int> hashnum;
+    const unsigned int prime1 = 1;
+    const unsigned int prime2 = 0;
+    unsigned int hash = 0;
+
+    cout << "Hashing Calculation for Password: " << password << "\n";
+
+    // Step 1: Generate individual character hashes
+    for (char ch : password) 
+    {
+        unsigned int hashValue = (prime1 * ch + prime2) % 5000;
+        hashnum.push_back(hashValue);
+        cout << "Character: " << ch << " -> Hash: " << hashValue << "\n";
+    }
+
+    // Step 2: Combine the individual hashes into a final hash
+    hash = accumulate(hashnum.begin(), hashnum.end(), 0u, 
+    [](unsigned int acc, unsigned int val) -> unsigned int 
+    {
+        return (acc * prime1 + val) % 5000;
+    });
+
+    cout << "Final Hash: " << hash << "\n";
+    return hash;
+}
+//
+//(Password Validation Function) Function to validate password and provide feedback
+bool validatity(const string& password, const string& firstName, 
+const string& lastName, string& feedback) 
+{
+    feedback = ""; // Reset feedback
+    if (password.length() < 7) 
+    {
+        feedback += "Password must be at least 7 characters long. ";
+        return false;
+    }
+
+    if (password.find(firstName) != string::npos || password.find(lastName) != string::npos) 
+    {
+        feedback += "Password should not contain your first or last name. ";
+        return false;
+    }
+
+    bool hasUpper = false;
+    bool hasLower = false;
+    bool hasDigit = false;
+    bool hasSpecial = false;
+
+    for (char ch : password) 
+    {
+        if (isupper(ch)) hasUpper = true;
+        else if (islower(ch)) hasLower = true;
+        else if (isdigit(ch)) hasDigit = true;
+        else if (ispunct(ch)) hasSpecial = true;
+    }
+
+    if (!hasUpper) feedback += "Missing uppercase letter. ";
+    if (!hasLower) feedback += "Missing lowercase letter. ";
+    if (!hasDigit) feedback += "Missing number. ";
+    if (!hasSpecial) feedback += "Missing special character. ";
+
+    return hasUpper && hasLower && hasDigit && hasSpecial;
+}
+//
+// Password strength Assesment Function
+string strengthpass(const string& password) 
+{
+    int strength = 0;
+
+    if (password.length() >= 8) strength++;
+    if (password.length() >= 12) strength++;
+
+    bool hasUpper = false, hasLower = false, hasDigit = false, hasSpecial = false;
+    for (char ch : password) 
+    {
+        if (isupper(ch)) hasUpper = true;
+        if (islower(ch)) hasLower = true;
+        if (isdigit(ch)) hasDigit = true;
+        if (ispunct(ch)) hasSpecial = true;
+    }
+
+    if (hasUpper) strength++;
+    if (hasLower) strength++;
+    if (hasDigit) strength++;
+    if (hasSpecial) strength++;
+
+    if (strength <= 3) return "Weak";
+    if (strength <= 5) return "Moderate";
+    return "Strong";
+}
+//
+// Function to simulate rate limiting
+void ratelimit(int attempts) 
+{
+    if (attempts > 3) 
+    {
+        cout << "Too many failed attempts. Applying 5-second rate limit...\n";
+        this_thread::sleep_for(chrono::seconds(5)); // Add a longer delay for brute-force resistance
+    } 
+    else 
+    {
+        this_thread::sleep_for(chrono::milliseconds(200)); // Standard delay
+    }
+}
+
+//Main Program Logic
+int main() 
+{
+    unordered_set<unsigned int> hashedPasswords; // Hash table for storing hashed passwords
+    string firstName, lastName, password;
+    int weakCounter = 0; // Counter for weak passwords
+    int failedAttempts = 0; // Tracks consecutive failed attempts
+
+    cout << endl;
+    cout << "\nEnter First name: ";
+    getline(cin, firstName);
+
+    cout << endl;
+    cout << "\nEnter Last name: ";
+    getline(cin, lastName);
+
+    cout << "\nPassword Requirements: Uppercase, Lowercase, Number, Special Characters, Minimum length of 7 characters.";
+    cout << endl;
+
+    while (true) 
+    {
+        cout << endl;
+        cout << "\nEnter your password (or type 'q' to quit): ";
+        getline(cin, password);
+
+        if (password == "q") 
+        {
+            break;
+        }
+
+        string feedback;
+        if (validatity(password, firstName, lastName, feedback)) 
+        {
+            unsigned int hashedPassword = enhancement(password);
+
+            if (hashedPasswords.find(hashedPassword) != hashedPasswords.end()) 
+            {
+                cout << "Password already used. Please choose a new one.\n";
+            } 
+            else 
+            {
+                hashedPasswords.insert(hashedPassword);
+                cout << "Password is valid.\n";
+                cout << "Password strength: " << strengthpass(password) << "\n";
+                cout << "Hashed password: " << hashedPassword << "\n";
+
+                // Reset failed attempts counter after success
+                failedAttempts = 0;
+
+                // Simulate brute-force resistance
+                ratelimit(0);
+            }
+        } 
+        else 
+        {
+            cout << endl;
+            cout << "Password is Weak. " << feedback << "\n";
+            weakCounter++;
+            failedAttempts++;
+
+            // Simulate brute-force resistance for invalid attempts
+            ratelimit(failedAttempts);
+        }
+    }
+
+    cout << endl;
+    cout << "Number of weak passwords entered: " << weakCounter << "\n";
+    cout << endl;
+    cout << "Exiting program. Stay secure!\n";
+    return 0;
+}
