@@ -1,0 +1,121 @@
+/*
+Author: Steven Davis
+Date Created: 11/5/24
+Class CSC 2710
+Path to file ie: ~/students/stevend/C++/DavisDijkstra.cpp
+Compile with: g++ filename.cpp
+Execute with: ./a.out
+Description of program: 
+A C++ implementation of dijkstras algorithm.
+*/
+
+#include <iostream>
+#include <limits.h>
+#include <chrono>
+
+using namespace std;
+const int INF = INT_MAX;
+
+// Function to find the vertex with the minimum distance value
+int minDistance(int dist[], bool sptSet[], int n) {
+    int min = INF, min_index;
+    for (int v = 0; v < n; v++)
+        if (!sptSet[v] && dist[v] <= min) {
+            min = dist[v];
+            min_index = v;
+        }
+    return min_index;
+}
+
+// Function to print the shortest path from source to j
+void printPath(int parent[], int j) {
+    if (parent[j] == -1)
+        return;
+    printPath(parent, parent[j]);
+    cout << " -> " << j + 1;
+}
+
+// Function to print the distance and path arrays
+void printSolution(int dist[], int n, int parent[], int src) {
+    cout << "Shortest path from Node " << src + 1 << ":\n";
+    for (int i = 1; i < n; i++) {
+        cout << "- To Node " << i + 1 << ": Distance = " << dist[i] << ", Path = " << src + 1;
+        printPath(parent, i);
+        cout << "\n";
+    }
+}
+
+// Function to implement Dijkstra's algorithm for a graph represented as a 2D matrix
+void dijkstra(int graph[6][6], int src, int n) {
+    int dist[n]; // dist[i] will hold the shortest distance from src to i
+    bool sptSet[n]; // sptSet[i] will be true if vertex i is included in shortest path tree
+    int parent[n]; // To store the shortest path tree
+
+    // Initialize all distances as INFINITE and sptSet[] as false
+    for (int i = 0; i < n; i++) {
+        dist[i] = INF;
+        sptSet[i] = false;
+        parent[i] = -1;
+    }
+
+    // Distance of source vertex from itself is always 0
+    dist[src] = 0;
+
+    // Find shortest path for all vertices
+    for (int count = 0; count < n - 1; count++) {
+        int u = minDistance(dist, sptSet, n);
+        sptSet[u] = true;
+
+        for (int v = 0; v < n; v++) {
+            if (!sptSet[v] && graph[u][v] && dist[u] != INF && dist[u] + graph[u][v] < dist[v]) {
+                dist[v] = dist[u] + graph[u][v];
+                parent[v] = u;
+            }
+        }
+    }
+
+    // Print the shortest distances and paths
+    printSolution(dist, n, parent, src);
+}
+
+int main() {
+    // Graph for Town 1
+    int graphTown1[6][6] = {
+        {0, 2, 4, 0, 0, 0},
+        {0, 0, 1, 7, 0, 0},
+        {0, 0, 0, 0, 3, 0},
+        {0, 0, 0, 0, 0, 1},
+        {0, 0, 0, 1, 0, 5},
+        {0, 0, 0, 0, 0, 0}
+    };
+
+    // Graph for Town 2
+    int graphTown2[6][6] = {
+        {0, 4, 20, 6, 15, 0},
+        {0, 0, 12, 0, 8, 0},
+        {0, 0, 0, 0, 0, 1},
+        {15, 0, 0, 0, 9, 22},
+        {0, 0, 7, 0, 0, 6},
+        {0, 0, 0, 0, 0, 0}
+    };
+
+    int n = 6; // Number of vertices (hubs)
+
+    // Process for Town 1
+    cout << "Town 1:\n";
+    auto startTown1 = chrono::high_resolution_clock::now();
+    dijkstra(graphTown1, 0, n); // Run Dijkstra's algorithm for Town 1 starting at node 1
+    auto endTown1 = chrono::high_resolution_clock::now();
+    auto durationTown1 = chrono::duration_cast<chrono::microseconds>(endTown1 - startTown1);
+    cout << "Total time taken for Town 1: " << durationTown1.count() << " microseconds\n\n";
+
+    // Process for Town 2
+    cout << "Town 2:\n";
+    auto startTown2 = chrono::high_resolution_clock::now();
+    dijkstra(graphTown2, 0, n); // Run Dijkstra's algorithm for Town 2 starting at node 1
+    auto endTown2 = chrono::high_resolution_clock::now();
+    auto durationTown2 = chrono::duration_cast<chrono::microseconds>(endTown2 - startTown2);
+    cout << "Total time taken for Town 2: " << durationTown2.count() << " microseconds\n";
+
+    return 0;
+}
