@@ -1,0 +1,118 @@
+/* 
+Author: Steven Davis
+Date Created: 10/20/24
+Class: CSC 2710
+Path to File: ~/students/SDavis/C++/DavisFloyds.cpp
+Compile with: g++ DavisFloyds.cpp
+Description: Floyd Warshall Algorothim implimented into C++, finding
+ quickest paths between a Town hall, Library, School, Grocery store, and Park.
+*/
+#include <iostream>
+using namespace std;
+
+const int vertices = 5; // Number of landmarks (5 landmarks)
+typedef int number;
+typedef int index;
+const number INF = 99999; // Define a constant for "infinity"
+
+// Function to output the contents of a matrix
+void printMatrix(number matrix[vertices][vertices], int n) {
+    for (int i = 0; i < n; i++) {
+    for (int j = 0; j < n; j++) {
+    if (matrix[i][j] == INF) {
+    cout << "INF "; // No direct path
+    } else {
+    cout << matrix[i][j] << " ";
+    }
+    }
+    cout << endl;
+    }
+}
+
+// Floyd's algorithm function to find the shortest paths
+void floyd(int n, const number W[vertices][vertices], number D[vertices][vertices], index P[vertices][vertices], int &compareCount) {
+    index i, j, k;
+
+    for (i = 0; i < n; i++)
+    for (j = 0; j < n; j++)
+    P[i][j] = -1; 
+
+    for (i = 0; i < n; i++)
+    for (j = 0; j < n; j++)
+    D[i][j] = W[i][j]; 
+
+    // Floyd-Warshall algorithm to find shortest paths
+    for (k = 0; k < n; k++) {
+    for (i = 0; i < n; i++) {
+    for (j = 0; j < n; j++) {
+    compareCount++; // Count comparison
+    if (D[i][k] + D[k][j] < D[i][j]) {
+    P[i][j] = k; // Update p
+    D[i][j] = D[i][k] + D[k][j]; // Update distance
+    }
+    }
+    }
+    }
+}
+
+// output the path from q to r
+void path(index q, index r, const index P[vertices][vertices], number &totalDistance) {
+    if (P[q][r] != -1) { 
+        path(q, P[q][r], P, totalDistance); //  call to get the full path
+        cout << P[q][r] + 1 << " "; // Output the vertex
+        path(P[q][r], r, P, totalDistance); // Continue to find the path to r
+    } else {
+        totalDistance += 0; // Add the distance for the final connection
+    }
+}
+
+void findPathAndDistance(index start, index end, const index P[vertices][vertices], const number D[vertices][vertices]) {
+    number totalDistance = D[start][end]; // Total distance from start to end
+    cout << "Path: " << start + 1 << " "; // Output starting point 
+    path(start, end, P, totalDistance); // Find the full path
+    cout << end + 1; // Output the final endpoint 
+    cout << " Total distance: " << totalDistance << endl; // Output total distance
+}
+
+int main() {
+    // Distance matrix 
+    number W[vertices][vertices] = {
+        {0, 7, 9, INF, 4}, // Town Hall
+        {7, 0, INF, 8, 6}, // Library
+        {9, INF, 0, 3, 12}, // School
+        {INF, 8, 3, 0, 5}, // Grocery Store
+        {4, 6, 12, 5, 0} // Park
+    };
+
+    number D[vertices][vertices]; // Distance matrix for Floyd's algorithm
+    index P[vertices][vertices]; // P matrix
+    int compareCount = 0; // Counter for comparisons
+
+    // Call Floyd's algorithm
+    floyd(vertices, W, D, P, compareCount);
+
+    // Output the matrices
+    cout << "Initial Distance Matrix (W):\n";
+    printMatrix(W, vertices);
+
+    cout << "Distance Matrix after Floyd's Algorithm (D):\n";
+    printMatrix(D, vertices);
+
+    // Output the number of comparisons made
+    cout << "Total number of comparisons: " << compareCount << endl;
+
+    // Solve the four scenarios
+    cout << "Path One: Emergency at the School\n"; // Path from Grocery Store (3) to School (2)
+    findPathAndDistance(3, 2, P, D); // Grocery Store to School
+
+    cout << "Path Two: Lost Documents\n"; // Path from Library (1) to Town Hall (0)
+    findPathAndDistance(1, 0, P, D); // Library to Town Hall
+
+    cout << "Path Three: Park Celebration\n"; // Path from School (2) to Park (4)
+    findPathAndDistance(2, 4, P, D); // School to Park
+
+    cout << "Path Four: Supplies for the Festival\n"; // Path from Grocery Store (3) to Library (1)
+    findPathAndDistance(3, 1, P, D); // Grocery Store to Library
+
+    return 0;
+}
