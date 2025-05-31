@@ -1,0 +1,56 @@
+// C++ program for implementation of Insertion Sort
+#include <iostream>
+using namespace std;
+using namespace std::chrono;
+#include <chrono>
+
+
+/* Function to sort array using insertion sort */
+void insertionSort(int arr[], int n, int &comps, int &swaps)
+{
+    for (int i = 1; i < n; ++i) {
+        int key = arr[i];
+        int j = i - 1;
+
+        /* Move elements that are
+           greater than key, to one position ahead
+           of their current position */
+        comps++;
+        while (j >= 0 && arr[j] > key) {
+            swaps++;
+            arr[j + 1] = arr[j];
+            j = j - 1;
+        }
+        arr[j + 1] = key;
+    }
+}
+
+/* A utility function to print array of size n */
+void printArray(int arr[], int n)
+{
+    for (int i = 0; i < n; ++i)
+        cout << arr[i] << " ";
+    cout << endl;
+}
+
+
+int main()
+{
+    long long start;
+    long long end;
+    int swaps;
+    int comps;
+    int arr[] = { 12, 11, 13, 5, 6 };
+    int n = sizeof(arr) / sizeof(arr[0]);
+
+    start = duration_cast<microseconds>(system_clock::now().time_since_epoch()).count();
+    insertionSort(arr, n, comps, swaps);
+    end = duration_cast<microseconds>(system_clock::now().time_since_epoch()).count();
+    cout << "sorted array: ";
+    printArray(arr, n);
+    cout << endl;
+    cout << "it took " << (end - start) << " microseconds to print the array" << endl;
+    cout << "number of swaps: " << swaps << endl;
+    cout << "number of comparisons: " << comps << endl; 
+    return 0;
+}
